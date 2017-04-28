@@ -23,17 +23,6 @@
 
 (defstruct animal x y energy dir genes)
 
-(defun stream-read (stream)
-"Reads from a usocket connected stream"
-  (read (usocket:socket-stream stream)))
-
-;; (print) puts the string in the stream buffer
-;; (force-output) pushes the buffer to the stream
-
-(defun stream-print (string stream)
-"Prints to a usocket connected stream"
-  (print string (usocket:socket-stream stream))
-  (force-output (usocket:socket-stream stream)))
 
 (defun random-plant (left top width height)
   (let ((pos (cons (+ left (random width))
@@ -217,9 +206,28 @@
          (draw-world-croatoan scr))))
 
 
+
+
+
+
+
+
+
+
+(defun stream-read (stream)
+"Reads from a usocket connected stream"
+  (read (usocket:socket-stream stream)))
+
+;; (print) puts the string in the stream buffer
+;; (force-output) pushes the buffer to the stream
+
+(defun stream-print (string stream)
+"Prints to a usocket connected stream"
+  (print string (usocket:socket-stream stream))
+  (force-output (usocket:socket-stream stream)))
 ;; enter a recursive infinite loop as the programs main loop.
 (defun serve ()
-(defparameter my-socket (usocket:socket-listen "127.0.0.1" 8082))
+(defparameter my-socket (usocket:socket-listen "127.0.0.1" 8084))
 (defparameter my-stream (usocket:socket-accept my-socket))
 "Main control loop"
   (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
@@ -238,105 +246,12 @@
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
          (update-world)
-         (sleep 0.005)
+         (sleep 1.005)
          (draw-world-croatoan scr)
-         (stream-print "echo" my-stream))))
+         (stream-print "echo
+" my-stream))));oh my god
+(serve)
 
 
 
-
-
-
-
-
-
-;; uses tagbody to separate between event handling and body.
-(defun evolve2 ()
-  (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
-    (clear scr)
-    (setf (.background scr) (make-instance 'complex-char :color-pair '(:green :white)))
-
-    (setq *width* (.width scr))
-    (setq *height* (.height scr))
-
-    (draw-world-croatoan scr)
-    (refresh scr)
-
-    (loop
-     (tagbody
-
-      ;; read a char.
-      (let ((ch (get-char scr)))
-
-        ;; if it is -1, just execute the body.
-        ;; this is a special event when there is no event.
-        (cond ((= ch -1) (go evolution-body))
-
-              ;; And from here we have real key/character events.
-              ((equal (code-char ch) #\q) (return))))
-
-      evolution-body
-      
-      (update-world) 
-      (sleep 0.001)
-      (draw-world-croatoan scr)
-      (refresh scr)))))
-
-;; uses key-pressed-p to separate between events and the body, instead of loop and tagbody used in 1 and 2.
-(defun evolve3 ()
-  (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
-    (clear scr)
-    ;(setf (.background scr) (make-instance 'complex-char :color-pair '(:green :white)))
-
-    (setq *width* (.width scr))
-    (setq *height* (.height scr))
-
-    (draw-world-croatoan scr)
-
-    (loop
-     (if (key-pressed-p scr)
-         (let ((ch (get-char scr)))
-           (cond ((equal (code-char ch) #\q) (return))))
-       (progn     
-         (update-world) 
-         (sleep 0.001)
-         (draw-world-croatoan scr) )))))
-
-;; uses get-event to separate between events and the body, instead of key-pressed-p.
-(defun evolve4 ()
-  (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
-    (clear scr)
-    ;(setf (.background scr) (make-instance 'complex-char :color-pair '(:green :white)))
-
-    (setq *width* (.width scr))
-    (setq *height* (.height scr))
-
-    (draw-world-croatoan scr)
-
-    (loop
-       (let ((event (get-event scr)))
-         (if event
-             (case event
-               (#\q (return)))
-             (progn     
-               (update-world) 
-               (sleep 0.001)
-               (draw-world-croatoan scr) ))))))
-
-;; use the event-case macro for event handling.
-(defun evolve5 ()
-  (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
-    (clear scr)
-
-    (setq *width* (.width scr))
-    (setq *height* (.height scr))
-
-    (draw-world-croatoan scr)
-
-    (event-case (scr event)
-      (#\q (return-from event-case))
-      ((nil) 
-       (update-world) 
-       (sleep 0.001)
-       (draw-world-croatoan scr)))))
 
