@@ -208,7 +208,11 @@
 
 
 
-
+(defun gen-hash (hash)
+  (let ((str "(progn "))
+  (maphash #'(lambda (key value) (when value (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
+(defun gen-animal ()
+  (format nil "(setf *animals* '~a)" *animals*))
 
 
 
@@ -218,16 +222,13 @@
 "Reads from a usocket connected stream"
   (read (usocket:socket-stream stream)))
 
-;; (print) puts the string in the stream buffer
-;; (force-output) pushes the buffer to the stream
-
 (defun stream-print (string stream)
 "Prints to a usocket connected stream"
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 ;; enter a recursive infinite loop as the programs main loop.
 (defun serve ()
-(defparameter my-socket (usocket:socket-listen "127.0.0.1" 8084))
+(defparameter my-socket (usocket:socket-listen "127.0.0.1" 8080))
 (defparameter my-stream (usocket:socket-accept my-socket))
 "Main control loop"
   (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
@@ -246,10 +247,12 @@
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
          (update-world)
-         (sleep 1.005)
+         (sleep 1.000)
          (draw-world-croatoan scr)
-         (stream-print "echo
-" my-stream))));oh my god
+
+       (stream-print (gen-hash *plants*) my-stream)
+       (stream-print (gen-animal) my-stream)
+)))
 (serve)
 
 

@@ -12,12 +12,17 @@
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 
-(defparameter my-stream (usocket:socket-connect "127.0.0.1" 8084))
+(defparameter my-stream (usocket:socket-connect "127.0.0.1" 8080))
+(defvar *in* ())
+(defvar *qqqq* ())
 
 (defun read-loop ()
   (when (listen (usocket:socket-stream my-stream))
-  (format t "~a" (stream-read my-stream)))
-         (sleep 0.005)
+
+
+    (setf *in* (stream-read my-stream))
+    (eval (read-from-string *in*))
+    (draw-world))
   (read-loop))
 
 (defun read-loop-2 ()
@@ -145,20 +150,20 @@
         ;; push the new animal to the list.
         (push animal-nu *animals*)))))
 
-(defun update-world ()
-  ;; Remove dead animals.
-  (setf *animals*
-        (remove-if (lambda (animal) (<= (animal-energy animal) 0))
-                   *animals*))
-  ;; Do what animals do.
-  (mapc (lambda (animal)
-          (turn animal)
-          (move- animal)
-          (eat animal)
-          (reproduce animal))
-        *animals*)
-  ;; Grow plants.
-  (add-plants))
+;(defun update-world ()
+;  ;; Remove dead animals.
+;  (setf *animals*
+;        (remove-if (lambda (animal) (<= (animal-energy animal) 0))
+;                   *animals*))
+;  ;; Do what animals do.
+;  (mapc (lambda (animal)
+;          (turn animal)
+;          (move- animal)
+;          (eat animal)
+;          (reproduce animal))
+;        *animals*)
+;  ;; Grow plants.
+;  (add-plants))
 
 ;;; simple non-ncurses version from LOL, prints to REPL.
 (defun draw-world ()
@@ -252,10 +257,16 @@
 
 
 
+(defun update-world ()
+  (setf *in* (stream-read my-stream))
+  (eval (read-from-string *in*)))
 
 
 
 
 
 
-(read-loop)
+
+
+
+;(read-loop)
