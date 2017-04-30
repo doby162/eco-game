@@ -1,5 +1,16 @@
 (ql:quickload :usocket)
 (ql:quickload :croatoan)
+
+(defpackage #:common-game
+  (:use :cl)
+  (:use :sb-ext)
+  (:use :usocket)
+  (:use :croatoan)
+  (:export :evolve))
+
+(in-package :common-game)
+
+
 (defun stream-read (stream)
 "Reads from a usocket connected stream"
   (read (usocket:socket-stream stream)))
@@ -270,3 +281,4 @@
 
 
 ;(read-loop)
+(evolve)
