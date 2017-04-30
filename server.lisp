@@ -14,6 +14,8 @@
 ;; Source: http://landoflisp.com/evolution.lisp
 ;; Unknown licence.
 
+(defvar *port* 8080)
+(dotimes (index (length *posix-argv*)) (when (equal (nth index *posix-argv*) "--port") (setf *port* (parse-integer (nth (+ 1 index) *posix-argv*)))))
 (defparameter *width*  100)
 (defparameter *height* 30)
 (defparameter *jungle* '(45 10 10 10))
@@ -228,7 +230,7 @@
   (force-output (usocket:socket-stream stream)))
 ;; enter a recursive infinite loop as the programs main loop.
 (defun serve ()
-(defparameter my-socket (usocket:socket-listen "127.0.0.1" 8080))
+(defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
 (defparameter my-stream (usocket:socket-accept my-socket))
 "Main control loop"
   (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
@@ -254,7 +256,3 @@
        (stream-print (gen-animal) my-stream)
 )))
 (serve)
-
-
-
-

@@ -11,6 +11,9 @@
 (in-package :common-game)
 
 
+(defvar *port* 8080)
+(dotimes (index (length *posix-argv*)) (when (equal (nth index *posix-argv*) "--port") (setf *port* (parse-integer (nth (+ 1 index) *posix-argv*)))))
+
 (defun stream-read (stream)
 "Reads from a usocket connected stream"
   (read (usocket:socket-stream stream)))
@@ -23,7 +26,7 @@
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 
-(defparameter my-stream (usocket:socket-connect "127.0.0.1" 8080))
+(defparameter my-stream (usocket:socket-connect "127.0.0.1" *port*))
 (defvar *in* ())
 (defvar *qqqq* ())
 
@@ -269,6 +272,7 @@
 
 
 (defun update-world ()
+  ;(setf *plants* (make-hash-table :test #'equal))
   (setf *in* (stream-read my-stream))
   (eval (read-from-string *in*)))
 
@@ -280,5 +284,4 @@
 
 
 
-;(read-loop)
 (evolve)
