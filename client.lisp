@@ -257,23 +257,27 @@
     (setq *width* (.width scr))
     (setq *height* (.height scr))
 
-    (loop 
-       initially 
+    (loop
+       initially
          (draw-world-croatoan scr)
 
        for ch = (get-char scr)
 
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
-         (update-world) 
+         ;(setf *plants* (make-hash-table :test #'equal))
+         (update-world)
          (sleep 0.001)
          (draw-world-croatoan scr))))
+
+;(defun evolve ()
+;(update-world)(evolve))
 
 
 
 (defun update-world ()
-  ;(setf *plants* (make-hash-table :test #'equal))
   (setf *in* (stream-read my-stream))
+  (when (search "*plants*" *in*) (setf *plants* (make-hash-table :test #'equal)))
   (eval (read-from-string *in*)))
 
 

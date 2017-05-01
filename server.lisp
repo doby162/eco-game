@@ -249,7 +249,7 @@
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
          (update-world)
-         (sleep 1.000)
+         (sleep 0.050)
          (draw-world-croatoan scr)
 
        (stream-print (gen-hash *plants*) my-stream)
