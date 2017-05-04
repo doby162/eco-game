@@ -1,5 +1,6 @@
 (ql:quickload :usocket)
 (ql:quickload :croatoan)
+(ql:quickload :bordeaux-threads)
 (defpackage #:common-game
   (:use :cl)
   (:use :sb-ext)
@@ -22,6 +23,7 @@
 (defparameter *plant-energy* 80)
 (defparameter *plants* (make-hash-table :test #'equal))
 (defparameter *reproduction-energy* 200)
+(defparameter *sockets* ())
 
 (defstruct animal x y energy dir genes)
 
@@ -231,7 +233,7 @@
 ;; enter a recursive infinite loop as the programs main loop.
 (defun serve ()
 (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
-(defparameter my-stream (usocket:socket-accept my-socket))
+  (bordeaux-threads:make-thread  (lambda () (loop (bordeaux-threads:thread-yield)(format t "~%New client~%")   (push (usocket:socket-accept my-socket) *sockets*))))
 "Main control loop"
   (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
     (clear scr)
@@ -248,11 +250,13 @@
 
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
+;         (print (eval (read)))
          (update-world)
          (sleep 0.050)
          (draw-world-croatoan scr)
+       (dolist (sock *sockets*)
+         (stream-print (gen-hash *plants*) sock)
+         (stream-print (gen-animal) sock))
 
-       (stream-print (gen-hash *plants*) my-stream)
-       (stream-print (gen-animal) my-stream)
 )))
 (serve)
