@@ -233,7 +233,9 @@
 ;; enter a recursive infinite loop as the programs main loop.
 (defun serve ()
 (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
-  (bordeaux-threads:make-thread  (lambda () (loop (bordeaux-threads:thread-yield)(format t "~%New client~%")   (push (usocket:socket-accept my-socket) *sockets*))))
+  (bordeaux-threads:make-thread
+    (lambda () (loop (let ((sock (usocket:socket-accept my-socket)))
+    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.149)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animal) sock))))))))
 "Main control loop"
   (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
     (clear scr)
@@ -250,13 +252,11 @@
 
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
+         (let ((start-time (get-internal-real-time)))
 ;         (print (eval (read)))
          (update-world)
-         (sleep 0.050)
          (draw-world-croatoan scr)
-       (dolist (sock *sockets*)
-         (stream-print (gen-hash *plants*) sock)
-         (stream-print (gen-animal) sock))
+         (sleepf (- 0.150 (/ (- (get-internal-real-time) start-time) internal-time-units-per-second)))))))
 
-)))
+(defun sleepf (tim) (when (> tim 0) (sleep tim)))
 (serve)

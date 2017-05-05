@@ -29,7 +29,6 @@
 (defparameter my-stream (usocket:socket-connect "127.0.0.1" *port*))
 (defvar *in* ())
 (defvar *qqqq* ())
-
 (defun read-loop ()
   (when (listen (usocket:socket-stream my-stream))
 
