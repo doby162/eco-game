@@ -266,9 +266,9 @@
 
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
-         ;(setf *plants* (make-hash-table :test #'equal))
          (update-world)
-         (sleep 0.001)
+         (stream-print ch my-stream)
+         (sleep 1.1)
          (draw-world-croatoan scr))))
 
 ;(defun evolve ()

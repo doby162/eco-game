@@ -23,10 +23,16 @@
 (defparameter *plant-energy* 80)
 (defparameter *plants* (make-hash-table :test #'equal))
 (defparameter *reproduction-energy* 200)
-(defparameter *sockets* ())
+(defparameter *input* ())
+(defparameter *players* ())
 
 (defstruct animal x y energy dir genes)
+(defun list-exec (ex ls &optional (n -1))
+  "takes an alist and a :property-name and executes the funcion at that location. optionally operates on the :property of a list at nth of the given list"
 
+
+  (unless (= -1 n) (setf ls (nth n ls)))
+  (funcall (cdr (assoc ex ls :test #'string=))))
 
 (defun random-plant (left top width height)
   (let ((pos (cons (+ left (random width))
@@ -181,12 +187,28 @@
                                      #\M)
                                     ;; if there is a plant, print *
                                     ((gethash (cons x y) *plants*) #\*)
+                                    ;; if there is a player, print it's name
+                                    ((some (lambda (player) (and (= (player-x player) x)
+                                                            (= (player-y player) y)))
+                                           *players*)
+                                     #\P)
+
+
+
+                                    ((and (equalp y 29)(equalp x 30)) #\k)
                                     ;; if there is neithe a plant nor an animal, print a space.
                                     (t #\space)))
                           :y y
                           :x x)))
   ;; refresh the physical screen to dsplay the drawn changes.
   (refresh scr))
+(defun player-x (player) (car 
+(funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
+))
+(defun player-y (player)
+  (cdr
+(funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
+))
 
 ;; enter a recursive infinite loop as the programs main loop.
 (defun evolve ()
@@ -231,11 +253,21 @@
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 ;; enter a recursive infinite loop as the programs main loop.
+(defun make-name () "P")
 (defun serve ()
 (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
-    (lambda () (loop (let ((sock (usocket:socket-accept my-socket)))
-    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.149)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animal) sock))))))))
+    (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (in ()))
+    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animal) sock))))
+    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*)
+(push (cons name (list
+(cons -1 (lambda ()))
+(cons 119 (lambda ()(setf y (- y 1))))
+(cons 115 (lambda ()(setf y (+ 1 y))))
+(cons 114 (lambda ()(setf x (- x 1))))
+(cons 116 (lambda ()(setf x (+ 1 x))))
+(cons 555 (lambda () (cons x y)))
+)) *players*))))))))
 "Main control loop"
   (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
     (clear scr)
@@ -254,6 +286,17 @@
        do
          (let ((start-time (get-internal-real-time)))
 ;         (print (eval (read)))
+
+         (when (> (length *input*) 0)
+           (let ((command (pop *input*)))
+(funcall (or (cdr (assoc (cdr command) (cdr (assoc (car command) *players* :test #'string=)))) (lambda ())))
+
+
+
+;           (list-exec (cdr command) (cdr (assoc (car command) *players* :test #'string=)))
+
+))
+
          (update-world)
          (draw-world-croatoan scr)
          (sleepf (- 0.150 (/ (- (get-internal-real-time) start-time) internal-time-units-per-second)))))))
