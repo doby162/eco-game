@@ -12,7 +12,9 @@
 
 
 (defvar *port* 8080)
+(defvar *ip-address* "127.0.0.1")
 (dotimes (index (length *posix-argv*)) (when (equal (nth index *posix-argv*) "--port") (setf *port* (parse-integer (nth (+ 1 index) *posix-argv*)))))
+(dotimes (index (length *posix-argv*)) (when (equal (nth index *posix-argv*) "--ip") (setf *ip-address* (nth (+ 1 index) *posix-argv*))))
 
 (defun stream-read (stream)
 "Reads from a usocket connected stream"
@@ -26,7 +28,7 @@
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 
-(defparameter my-stream (usocket:socket-connect "127.0.0.1" *port*))
+(defparameter my-stream (usocket:socket-connect *ip-address* *port*))
 (defvar *in* ())
 (defvar *qqqq* ())
 (defun read-loop ()
