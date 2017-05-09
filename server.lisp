@@ -25,6 +25,7 @@
 (defparameter *reproduction-energy* 200)
 (defparameter *input* ())
 (defparameter *players* ())
+(defparameter *continue* t)
 
 (defstruct animal x y energy dir genes)
 (defun list-exec (ex ls &optional (n -1))
@@ -210,28 +211,6 @@
 (funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
 ))
 
-;; enter a recursive infinite loop as the programs main loop.
-(defun evolve ()
-  (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
-    (clear scr)
-    (setf (.background scr) (make-instance 'complex-char :color-pair '(:green :white)))
-
-    (setq *width* (.width scr))
-    (setq *height* (.height scr))
-
-    (loop 
-       initially 
-         (draw-world-croatoan scr)
-
-       for ch = (get-char scr)
-
-       while (or (= ch -1) (not (equal (code-char ch) #\q)))
-       do
-         (update-world) 
-         (sleep 0.001)
-         (draw-world-croatoan scr))))
-
-
 
 
 (defun gen-hash (hash)
@@ -253,13 +232,13 @@
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 ;; enter a recursive infinite loop as the programs main loop.
-(defun make-name () "P")
+(defun make-name () (format t "new thread ~%") "P")
 (defun serve ()
 (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
     (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (in ()))
     (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animal) sock))))
-    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*)
+    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*))))
 (push (cons name (list
 (cons -1 (lambda ()))
 (cons 119 (lambda ()(setf y (- y 1))))
@@ -267,22 +246,14 @@
 (cons 114 (lambda ()(setf x (- x 1))))
 (cons 116 (lambda ()(setf x (+ 1 x))))
 (cons 555 (lambda () (cons x y)))
-)) *players*))))))))
+)) *players*)))))
 "Main control loop"
-  (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
-    (clear scr)
-    (setf (.background scr) (make-instance 'complex-char :color-pair '(:green :white)))
 
-    (setq *width* (.width scr))
-    (setq *height* (.height scr))
+    (setq *width* 5000)
+    (setq *height* 5000)
 
     (loop
-       initially
-         (draw-world-croatoan scr)
-
-       for ch = (get-char scr)
-
-       while (or (= ch -1) (not (equal (code-char ch) #\q)))
+       while *continue*
        do
          (let ((start-time (get-internal-real-time)))
 ;         (print (eval (read)))
@@ -298,8 +269,8 @@
 ))
 
          (update-world)
-         (draw-world-croatoan scr)
-         (sleepf (- 0.150 (/ (- (get-internal-real-time) start-time) internal-time-units-per-second)))))))
+         (sleepf (- 0.150 (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))))))
 
 (defun sleepf (tim) (when (> tim 0) (sleep tim)))
-(serve)
+
+(bordeaux-threads:make-thread (lambda () (serve)))

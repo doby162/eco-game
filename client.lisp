@@ -267,8 +267,8 @@
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
          (update-world)
-         (stream-print ch my-stream)
-         (sleep 1.1)
+         ;(stream-print ch my-stream)
+         (sleep 0.1)
          (draw-world-croatoan scr))))
 
 ;(defun evolve ()
