@@ -204,14 +204,14 @@
 (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
     (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (in ()))
-    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
-    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.05) (push (cons name (stream-read sock)) *input*))))
+    (bordeaux-threads:make-thread (lambda () (loop (sleepf 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
+    (bordeaux-threads:make-thread (lambda () (loop (sleepf 0.15) (push (cons name (stream-read sock)) *input*))))
 (push (cons name (list
 (cons -1 (lambda ()))
 (cons 119 (lambda ()(setf y (- y 1))))
 (cons 115 (lambda ()(setf y (+ 1 y))))
-(cons 114 (lambda ()(setf x (- x 1))))
-(cons 116 (lambda ()(setf x (+ 1 x))))
+(cons 97 (lambda ()(setf x (- x 1))))
+(cons 100 (lambda ()(setf x (+ 1 x))))
 (cons 555 (lambda () (cons x y)))
 )) *players*)))))
 "Main control loop"
@@ -226,6 +226,8 @@
          (let ((start-time (get-internal-real-time)))
          (loop while (> (length *input*) 0)
            do (let ((command (pop *input*)))
+;(format t "~a~%" command)
+
              (funcall (or (cdr (assoc (cdr command) (cdr (assoc (car command) *players* :test #'string=)))) (lambda ())))))
 
          (update-world)
