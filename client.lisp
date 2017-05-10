@@ -1,6 +1,5 @@
 (ql:quickload :usocket)
 (ql:quickload :croatoan)
-
 (defpackage #:common-game
   (:use :cl)
   (:use :sb-ext)
@@ -30,35 +29,6 @@
 
 (defparameter my-stream (usocket:socket-connect *ip-address* *port*))
 (defvar *in* ())
-(defvar *qqqq* ())
-(defun read-loop ()
-  (when (listen (usocket:socket-stream my-stream))
-
-
-    (setf *in* (stream-read my-stream))
-    (eval (read-from-string *in*))
-    (draw-world))
-  (read-loop))
-
-(defun read-loop-2 ()
-  (loop
-    (when (listen ((usocket:socket-stream my-stream))
-      (format t "~a" (stream-read my-stream)))
-      (force-output *standrd-output*)
-      (sleep 0.005))))
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -85,6 +55,7 @@
 (defparameter *plant-energy* 80)
 (defparameter *plants* (make-hash-table :test #'equal))
 (defparameter *reproduction-energy* 200)
+(defparameter *players* ())
 
 (defstruct animal x y energy dir genes)
 
@@ -242,6 +213,11 @@
                                      #\M)
                                     ;; if there is a plant, print *
                                     ((gethash (cons x y) *plants*) #\*)
+
+                                    ((some (lambda (player) (and (= (car player) x)
+                                                            (= (cdr player) y)))
+                                           *players*)
+                                     #\P)
                                     ;; if there is neithe a plant nor an animal, print a space.
                                     (t #\space)))
                           :y y
@@ -267,26 +243,14 @@
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
          (update-world)
-         ;(stream-print ch my-stream)
+         (stream-print ch my-stream)
          (sleep 0.1)
          (draw-world-croatoan scr))))
-
-;(defun evolve ()
-;(update-world)(evolve))
-
 
 
 (defun update-world ()
   (setf *in* (stream-read my-stream))
   (when (search "*plants*" *in*) (setf *plants* (make-hash-table :test #'equal)))
   (eval (read-from-string *in*)))
-
-
-
-
-
-
-
-
 
 (evolve)

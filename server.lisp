@@ -28,10 +28,9 @@
 (defparameter *continue* t)
 
 (defstruct animal x y energy dir genes)
+
 (defun list-exec (ex ls &optional (n -1))
   "takes an alist and a :property-name and executes the funcion at that location. optionally operates on the :property of a list at nth of the given list"
-
-
   (unless (= -1 n) (setf ls (nth n ls)))
   (funcall (cdr (assoc ex ls :test #'string=))))
 
@@ -167,42 +166,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; instead of using princ to draw to stdout, use add-string to draw to the curses screen.
-;; the screen has to be initialized first in the main function evolve.
-(defun draw-world-croatoan (scr)
-  (loop 
-     for y 
-     from 0
-     below *height*
-     do (loop 
-           for x 
-           from 0
-           below *width*
-           do (add-string scr
-                          (format nil "~A"
-                                  (cond 
-                                    ;; if there is one or more animals, print a M.
-                                    ((some (lambda (animal) (and (= (animal-x animal) x)
-                                                            (= (animal-y animal) y)))
-                                           *animals*)
-                                     #\M)
-                                    ;; if there is a plant, print *
-                                    ((gethash (cons x y) *plants*) #\*)
-                                    ;; if there is a player, print it's name
-                                    ((some (lambda (player) (and (= (player-x player) x)
-                                                            (= (player-y player) y)))
-                                           *players*)
-                                     #\P)
-
-
-
-                                    ((and (equalp y 29)(equalp x 30)) #\k)
-                                    ;; if there is neithe a plant nor an animal, print a space.
-                                    (t #\space)))
-                          :y y
-                          :x x)))
-  ;; refresh the physical screen to dsplay the drawn changes.
-  (refresh scr))
 (defun player-x (player) (car 
 (funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
 ))
@@ -216,8 +179,12 @@
 (defun gen-hash (hash)
   (let ((str "(progn "))
   (maphash #'(lambda (key value) (when value (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
-(defun gen-animal ()
+(defun gen-animals ()
   (format nil "(setf *animals* '~a)" *animals*))
+(defun gen-players ()
+  (let ((str "(progn (setf *players* ()) "))
+    (dolist (play *players*)
+      (setf str (concatenate 'string str (format nil "(push '~a *players*)" (funcall (or (cdr (assoc 555 (cdr play))) (lambda () (cons 31 31)))))))) (concatenate 'string str ")")))
 
 
 
@@ -237,8 +204,8 @@
 (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
     (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (in ()))
-    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animal) sock))))
-    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*))))
+    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
+    (bordeaux-threads:make-thread (lambda () (loop (sleep 0.05) (push (cons name (stream-read sock)) *input*))))
 (push (cons name (list
 (cons -1 (lambda ()))
 (cons 119 (lambda ()(setf y (- y 1))))
@@ -255,18 +222,11 @@
     (loop
        while *continue*
        do
+;(format t "~a~%" *input*)
          (let ((start-time (get-internal-real-time)))
-;         (print (eval (read)))
-
-         (when (> (length *input*) 0)
-           (let ((command (pop *input*)))
-(funcall (or (cdr (assoc (cdr command) (cdr (assoc (car command) *players* :test #'string=)))) (lambda ())))
-
-
-
-;           (list-exec (cdr command) (cdr (assoc (car command) *players* :test #'string=)))
-
-))
+         (loop while (> (length *input*) 0)
+           do (let ((command (pop *input*)))
+             (funcall (or (cdr (assoc (cdr command) (cdr (assoc (car command) *players* :test #'string=)))) (lambda ())))))
 
          (update-world)
          (sleepf (- 0.150 (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))))))
