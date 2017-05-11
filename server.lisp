@@ -200,6 +200,7 @@
   (force-output (usocket:socket-stream stream)))
 ;; enter a recursive infinite loop as the programs main loop.
 (defun make-name () (format t "new thread ~%") "P")
+(defparameter commands (make-hash-table :test #'equal))
 (defun serve ()
 (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
@@ -227,8 +228,8 @@
          (loop while (> (length *input*) 0)
            do (let ((command (pop *input*)))
 ;(format t "~a~%" command)
-
-             (funcall (or (cdr (assoc (cdr command) (cdr (assoc (car command) *players* :test #'string=)))) (lambda ())))))
+             (setf (gethash (car command) commands) (cdr command))))
+  (maphash #'(lambda (key value) (funcall (or (cdr (assoc value (cdr (assoc key *players*)))) (lambda ())))) commands)
 
          (update-world)
          (sleepf (- 0.150 (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))))))

@@ -226,6 +226,7 @@
   (refresh scr))
 
 ;; enter a recursive infinite loop as the programs main loop.
+(defvar *last-signal* -1)
 (defun evolve ()
   (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
     (clear scr)
@@ -243,8 +244,7 @@
        while (or (= ch -1) (not (equal (code-char ch) #\q)))
        do
          (update-world)
-         (when (not (= ch -1))(stream-print ch my-stream))
-;         (sleep 0.05)
+         (when (not (= ch *last-signal*))(setf *last-signal* ch)(stream-print ch my-stream))
          (draw-world-croatoan scr))))
 
 
