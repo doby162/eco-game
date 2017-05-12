@@ -16,14 +16,14 @@
 (dotimes (index (length *posix-argv*)) (when (equal (nth index *posix-argv*) "--ip") (setf *ip-address* (nth (+ 1 index) *posix-argv*))))
 
 (defun stream-read (stream)
-"Reads from a usocket connected stream"
+  "Reads from a usocket connected stream"
   (read (usocket:socket-stream stream)))
 
 ;; (print) puts the string in the stream buffer
 ;; (force-output) pushes the buffer to the stream
 
 (defun stream-print (string stream)
-"Prints to a usocket connected stream"
+  "Prints to a usocket connected stream"
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 
@@ -136,20 +136,20 @@
         ;; push the new animal to the list.
         (push animal-nu *animals*)))))
 
-;(defun update-world ()
-;  ;; Remove dead animals.
-;  (setf *animals*
-;        (remove-if (lambda (animal) (<= (animal-energy animal) 0))
-;                   *animals*))
-;  ;; Do what animals do.
-;  (mapc (lambda (animal)
-;          (turn animal)
-;          (move- animal)
-;          (eat animal)
-;          (reproduce animal))
-;        *animals*)
-;  ;; Grow plants.
-;  (add-plants))
+                                        ;(defun update-world ()
+                                        ;  ;; Remove dead animals.
+                                        ;  (setf *animals*
+                                        ;        (remove-if (lambda (animal) (<= (animal-energy animal) 0))
+                                        ;                   *animals*))
+                                        ;  ;; Do what animals do.
+                                        ;  (mapc (lambda (animal)
+                                        ;          (turn animal)
+                                        ;          (move- animal)
+                                        ;          (eat animal)
+                                        ;          (reproduce animal))
+                                        ;        *animals*)
+                                        ;  ;; Grow plants.
+                                        ;  (add-plants))
 
 ;;; simple non-ncurses version from LOL, prints to REPL.
 (defun draw-world ()
@@ -163,7 +163,7 @@
                         do (princ (cond 
                                     ;; if there is one or more animals, print a M.
                                     ((some (lambda (animal) (and (= (animal-x animal) x)
-                                                            (= (animal-y animal) y)))
+                                                                 (= (animal-y animal) y)))
                                            *animals*)
                                      #\M)
                                     ;; if there is a plant, print *
@@ -183,10 +183,10 @@
           (t (let ((x (parse-integer str :junk-allowed t)))
                (if x
                    (loop for i
-                      below x
-                      do (update-world)
-                      if (zerop (mod i 1000))
-                      do (princ #\.))
+                         below x
+                         do (update-world)
+                         if (zerop (mod i 1000))
+                         do (princ #\.))
                    (update-world))
                (evolution))))))
 
@@ -197,33 +197,33 @@
 (defvar *recent-name* "")
 (defun draw-world-croatoan (scr)
   (loop 
-     for y 
-     from 0
-     below *height*
-     do (loop 
-           for x 
-           from 0
-           below *width*
-           do (add-string scr
-                          (format nil "~A"
-                                  (cond 
-                                    ;; if there is one or more animals, print a M.
-                                    ((some (lambda (animal) (and (= (animal-x animal) x)
-                                                            (= (animal-y animal) y)))
-                                           *animals*)
-                                     #\M)
-                                    ;; if there is a plant, print *
-                                    ((gethash (cons x y) *plants*) #\*)
+    for y 
+    from 0
+    below *height*
+    do (loop 
+         for x 
+         from 0
+         below *width*
+         do (add-string scr
+                        (format nil "~A"
+                                (cond 
+                                  ;; if there is one or more animals, print a M.
+                                  ((some (lambda (animal) (and (= (animal-x animal) x)
+                                                               (= (animal-y animal) y)))
+                                         *animals*)
+                                   #\M)
+                                  ;; if there is a plant, print *
+                                  ((gethash (cons x y) *plants*) #\*)
 
-                                    ((some (lambda (player) (and (= (second player) x)
-                                                            (= (third player) y)
-                                                            (setf *recent-name* (first player))))
-                                           *players*)
-                                     *recent-name*)
-                                    ;; if there is neithe a plant nor an animal, print a space.
-                                    (t #\space)))
-                          :y y
-                          :x x)))
+                                  ((some (lambda (player) (and (= (second player) x)
+                                                               (= (third player) y)
+                                                               (setf *recent-name* (first player))))
+                                         *players*)
+                                   *recent-name*)
+                                  ;; if there is neithe a plant nor an animal, print a space.
+                                  (t #\space)))
+                        :y y
+                        :x x)))
   ;; refresh the physical screen to dsplay the drawn changes.
   (refresh scr))
 
@@ -238,16 +238,16 @@
     (setq *height* (.height scr))
 
     (loop
-       initially
-         (draw-world-croatoan scr)
+      initially
+      (draw-world-croatoan scr)
 
-       for ch = (get-char scr)
+      for ch = (get-char scr)
 
-       while (or (= ch -1) (not (equal (code-char ch) #\q)))
-       do
-         (update-world)
-         (when (not (= ch *last-signal*))(setf *last-signal* ch)(stream-print ch my-stream))
-         (draw-world-croatoan scr))))
+      while (or (= ch -1) (not (equal (code-char ch) #\q)))
+      do
+      (update-world)
+      (when (not (= ch *last-signal*))(setf *last-signal* ch)(stream-print ch my-stream))
+      (draw-world-croatoan scr))))
 
 
 (defun update-world ()

@@ -137,7 +137,7 @@
                         do (princ (cond 
                                     ;; if there is one or more animals, print a M.
                                     ((some (lambda (animal) (and (= (animal-x animal) x)
-                                                            (= (animal-y animal) y)))
+                                                                 (= (animal-y animal) y)))
                                            *animals*)
                                      #\M)
                                     ;; if there is a plant, print *
@@ -157,28 +157,28 @@
           (t (let ((x (parse-integer str :junk-allowed t)))
                (if x
                    (loop for i
-                      below x
-                      do (update-world)
-                      if (zerop (mod i 1000))
-                      do (princ #\.))
+                         below x
+                         do (update-world)
+                         if (zerop (mod i 1000))
+                         do (princ #\.))
                    (update-world))
                (evolution))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun player-x (player) (car 
-(funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
-))
+                          (funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
+                          ))
 (defun player-y (player)
   (cdr
-(funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
-))
+   (funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
+   ))
 
 
 
 (defun gen-hash (hash)
   (let ((str "(progn "))
-  (maphash #'(lambda (key value) (when value (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
+    (maphash #'(lambda (key value) (when value (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
 (defun gen-animals ()
   (format nil "(setf *animals* '~a)" *animals*))
 (defun gen-players ()
@@ -191,48 +191,48 @@
 
 
 (defun stream-read (stream)
-"Reads from a usocket connected stream"
+  "Reads from a usocket connected stream"
   (read (usocket:socket-stream stream)))
 
 (defun stream-print (string stream)
-"Prints to a usocket connected stream"
+  "Prints to a usocket connected stream"
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 ;; enter a recursive infinite loop as the programs main loop.
 (defun make-name () (format t "new thread ~%") (let* ((chars "ABCDEFGHIJKLNOPQRSTUVWXYZ!@#$%^&") (rand (random (length chars)))) (subseq chars (- rand 1) rand)))
 (defparameter commands (make-hash-table :test #'equal))
 (defun serve ()
-(defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
+  (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
-    (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (in ()))
-    (bordeaux-threads:make-thread (lambda () (loop (sleepf 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
-    (bordeaux-threads:make-thread (lambda () (loop (sleepf 0.15) (push (cons name (stream-read sock)) *input*))))
-(push (cons name (list
-(cons -1 (lambda ()))
-(cons 119 (lambda ()(setf y (- y 1))))
-(cons 115 (lambda ()(setf y (+ 1 y))))
-(cons 97 (lambda ()(setf x (- x 1))))
-(cons 100 (lambda ()(setf x (+ 1 x))))
-(cons 555 (lambda () (list name x y)))
-)) *players*)))))
-"Main control loop"
+   (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (in ()))
+                      (bordeaux-threads:make-thread (lambda () (loop (sleepf 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
+                      (bordeaux-threads:make-thread (lambda () (loop (sleepf 0.15) (push (cons name (stream-read sock)) *input*))))
+                      (push (cons name (list
+                                        (cons -1 (lambda ()))
+                                        (cons 119 (lambda ()(setf y (- y 1))))
+                                        (cons 115 (lambda ()(setf y (+ 1 y))))
+                                        (cons 97 (lambda ()(setf x (- x 1))))
+                                        (cons 100 (lambda ()(setf x (+ 1 x))))
+                                        (cons 555 (lambda () (list name x y)))
+                                        )) *players*)))))
+  "Main control loop"
 
-    (setq *width* 5000)
-    (setq *height* 5000)
+  (setq *width* 5000)
+  (setq *height* 5000)
 
-    (loop
-       while *continue*
-       do
-;(format t "~a~%" *input*)
-         (let ((start-time (get-internal-real-time)))
-         (loop while (> (length *input*) 0)
-           do (let ((command (pop *input*)))
-;(format t "~a~%" command)
-             (setf (gethash (car command) commands) (cdr command))))
-  (maphash #'(lambda (key value) (funcall (or (cdr (assoc value (cdr (assoc key *players*)))) (lambda ())))) commands)
+  (loop
+    while *continue*
+    do
+                                        ;(format t "~a~%" *input*)
+    (let ((start-time (get-internal-real-time)))
+      (loop while (> (length *input*) 0)
+            do (let ((command (pop *input*)))
+                                        ;(format t "~a~%" command)
+                 (setf (gethash (car command) commands) (cdr command))))
+      (maphash #'(lambda (key value) (funcall (or (cdr (assoc value (cdr (assoc key *players*)))) (lambda ())))) commands)
 
-         (update-world)
-         (sleepf (- 0.150 (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))))))
+      (update-world)
+      (sleepf (- 0.150 (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))))))
 
 (defun sleepf (tim) (when (> tim 0) (sleep tim)))
 
