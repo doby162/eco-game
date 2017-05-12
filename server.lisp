@@ -199,7 +199,7 @@
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 ;; enter a recursive infinite loop as the programs main loop.
-(defun make-name () (format t "new thread ~%") "P")
+(defun make-name () (format t "new thread ~%") (let* ((chars "ABCDEFGHIJKLNOPQRSTUVWXYZ!@#$%^&") (rand (random (length chars)))) (subseq chars (- rand 1) rand)))
 (defparameter commands (make-hash-table :test #'equal))
 (defun serve ()
 (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
@@ -213,7 +213,7 @@
 (cons 115 (lambda ()(setf y (+ 1 y))))
 (cons 97 (lambda ()(setf x (- x 1))))
 (cons 100 (lambda ()(setf x (+ 1 x))))
-(cons 555 (lambda () (cons x y)))
+(cons 555 (lambda () (list name x y)))
 )) *players*)))))
 "Main control loop"
 

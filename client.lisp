@@ -194,6 +194,7 @@
 
 ;; instead of using princ to draw to stdout, use add-string to draw to the curses screen.
 ;; the screen has to be initialized first in the main function evolve.
+(defvar *recent-name* "")
 (defun draw-world-croatoan (scr)
   (loop 
      for y 
@@ -214,10 +215,11 @@
                                     ;; if there is a plant, print *
                                     ((gethash (cons x y) *plants*) #\*)
 
-                                    ((some (lambda (player) (and (= (car player) x)
-                                                            (= (cdr player) y)))
+                                    ((some (lambda (player) (and (= (second player) x)
+                                                            (= (third player) y)
+                                                            (setf *recent-name* (first player))))
                                            *players*)
-                                     #\P)
+                                     *recent-name*)
                                     ;; if there is neithe a plant nor an animal, print a space.
                                     (t #\space)))
                           :y y
