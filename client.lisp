@@ -229,6 +229,7 @@
 
 ;; enter a recursive infinite loop as the programs main loop.
 (defvar *last-signal* -1)
+(defvar *timebomb* (get-internal-real-time))
 (defun evolve ()
   (with-screen (scr :input-blocking nil :input-echoing nil :cursor-visibility nil)
     (clear scr)
@@ -246,7 +247,9 @@
       while (or (= ch -1) (not (equal (code-char ch) #\q)))
       do
       (update-world)
-      (when (not (= ch *last-signal*))(setf *last-signal* ch)(stream-print ch my-stream))
+      (when (not (= ch -1)) (setf *timebomb* (get-internal-real-time)))
+      (when (and (> (- (get-internal-real-time) *timebomb*) 175) (= ch -1)(not (= ch *last-signal*))) (stream-print ch my-stream)(setf *last-signal* ch))
+      (when (and (not (= ch *last-signal*)) (not (= ch -1)))(setf *last-signal* ch)(stream-print ch my-stream))
       (draw-world-croatoan scr))))
 
 
