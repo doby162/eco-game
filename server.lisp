@@ -17,8 +17,8 @@
 
 (defvar *port* 8080)
 (dotimes (index (length *posix-argv*)) (when (equal (nth index *posix-argv*) "--port") (setf *port* (parse-integer (nth (+ 1 index) *posix-argv*)))))
-(defparameter *width*  100)
-(defparameter *height* 30)
+(defparameter *width*  175);this is in chars, not pixels. Much larger
+(defparameter *height* 175)
 (defparameter *jungle* '(45 10 10 10))
 (defparameter *plant-energy* 80)
 (defparameter *plants* (make-hash-table :test #'equal))
@@ -26,6 +26,7 @@
 (defparameter *input* ())
 (defparameter *players* ())
 (defparameter *continue* t)
+(defparameter *sleep-time* 0.15)
 
 (defstruct animal x y energy dir genes)
 
@@ -49,6 +50,11 @@
 (defparameter *animals*
   (list (make-animal :x (ash *width* -1)
                      :y (ash *height* -1)
+                     :energy 1000
+                     :dir 0
+                     :genes (loop repeat 8 collect (1+ (random 10))))
+        (make-animal :x 45
+                     :y 15
                      :energy 1000
                      :dir 0
                      :genes (loop repeat 8 collect (1+ (random 10))))))
@@ -205,8 +211,8 @@
   (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
    (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (in ()))
-                      (bordeaux-threads:make-thread (lambda () (loop (sleepf 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
-                      (bordeaux-threads:make-thread (lambda () (loop (sleepf 0.15) (push (cons name (stream-read sock)) *input*))))
+                      (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
+                      (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*))))
                       (push (cons name (list
                                         (cons -1 (lambda ()))
                                         (cons 119 (lambda ()(setf y (- y 1))))
@@ -216,9 +222,6 @@
                                         (cons 555 (lambda () (list name x y)))
                                         )) *players*)))))
   "Main control loop"
-
-  (setq *width* 5000)
-  (setq *height* 5000)
 
   (loop
     while *continue*
@@ -232,7 +235,8 @@
       (maphash #'(lambda (key value) (funcall (or (cdr (assoc value (cdr (assoc key *players*)))) (lambda ())))) commands)
 
       (update-world)
-      (sleepf (- 0.150 (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))))))
+      (sleepf (- *sleep-time* (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))) 
+)))
 
 (defun sleepf (tim) (when (> tim 0) (sleep tim)))
 
