@@ -28,6 +28,15 @@
 (defparameter *continue* t)
 (defparameter *sleep-time* 0.15)
 
+(defvar *W* 119)
+(defvar *S* 115)
+(defvar *A* 97)
+(defvar *D* 100)
+
+(defvar *status* 555)
+(defvar *location* 554)
+(defvar *eat* 553)
+
 (defstruct animal x y energy dir genes)
 
 (defun list-exec (ex ls &optional (n -1))
@@ -129,7 +138,7 @@
           (reproduce animal))
         *animals*)
    ;; Do what players do.
-   (dolist (player *players*) (when (remhash (funcall (cdr (assoc 554 (cdr player)))) *plants*) (funcall (cdr (assoc 553 (cdr player))))))
+   (dolist (player *players*) (when (remhash (funcall (cdr (assoc *location* (cdr player)))) *plants*) (funcall (cdr (assoc *eat* (cdr player))))))
   ;; Grow plants.
   (add-plants))
 
@@ -175,11 +184,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun player-x (player) (car 
-                          (funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
+                          (funcall (or (cdr (assoc *status* (cdr player))) (lambda () (cons 31 31))))
                           ))
 (defun player-y (player)
   (cdr
-   (funcall (or (cdr (assoc 555 (cdr player))) (lambda () (cons 31 31))))
+   (funcall (or (cdr (assoc *status* (cdr player))) (lambda () (cons 31 31))))
    ))
 
 
@@ -192,7 +201,7 @@
 (defun gen-players ()
   (let ((str "(progn (setf *players* ()) "))
     (dolist (play *players*)
-      (setf str (concatenate 'string str (format nil "(push '~a *players*)" (funcall (or (cdr (assoc 555 (cdr play))) (lambda () (cons 31 31)))))))) (concatenate 'string str ")")))
+      (setf str (concatenate 'string str (format nil "(push '~a *players*)" (funcall (or (cdr (assoc *status* (cdr play))) (lambda () (cons 31 31)))))))) (concatenate 'string str ")")))
 
 
 
@@ -217,13 +226,13 @@
                       (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*))))
                       (push (cons name (list
                                         (cons -1 (lambda ()))
-                                        (cons 119 (lambda ()(setf y (- y 1))))
-                                        (cons 115 (lambda ()(setf y (+ 1 y))))
-                                        (cons 97 (lambda ()(setf x (- x 1))))
-                                        (cons 100 (lambda ()(setf x (+ 1 x))))
-                                        (cons 555 (lambda () (list name x y)))
-                                        (cons 554 (lambda () (cons x y)))
-                                        (cons 553 (lambda () (setf energy (+ energy *plant-energy*))))
+                                        (cons *W* (lambda ()(setf y (- y 1))))
+                                        (cons *S* (lambda ()(setf y (+ 1 y))))
+                                        (cons *A* (lambda ()(setf x (- x 1))))
+                                        (cons *D* (lambda ()(setf x (+ 1 x))))
+                                        (cons *status* (lambda () (list name x y)))
+                                        (cons *location* (lambda () (cons x y)))
+                                        (cons *eat* (lambda () (setf energy (+ energy *plant-energy*))))
                                         )) *players*))))))
 (defun serve ()
   "Main control loop"
@@ -248,5 +257,6 @@
 (init)
 (defun boot () (bordeaux-threads:make-thread (lambda () (serve))))
 (defun pause () (setf *continue* nil))
+(defun clear-plants ()(setf *plants* (make-hash-table :test #'equal)))
 (boot)
 
