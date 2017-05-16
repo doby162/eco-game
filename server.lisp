@@ -128,6 +128,8 @@
           (eat animal)
           (reproduce animal))
         *animals*)
+   ;; Do what players do.
+   (dolist (player *players*) (when (remhash (funcall (cdr (assoc 554 (cdr player)))) *plants*) (funcall (cdr (assoc 553 (cdr player))))))
   ;; Grow plants.
   (add-plants))
 
@@ -210,7 +212,7 @@
 (defun init ()
   (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
-   (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (in ()))
+   (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (energy 2000)(in ()))
                       (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
                       (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*))))
                       (push (cons name (list
@@ -220,6 +222,8 @@
                                         (cons 97 (lambda ()(setf x (- x 1))))
                                         (cons 100 (lambda ()(setf x (+ 1 x))))
                                         (cons 555 (lambda () (list name x y)))
+                                        (cons 554 (lambda () (cons x y)))
+                                        (cons 553 (lambda () (setf energy (+ energy *plant-energy*))))
                                         )) *players*))))))
 (defun serve ()
   "Main control loop"
