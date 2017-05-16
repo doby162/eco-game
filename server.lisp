@@ -17,8 +17,8 @@
 
 (defvar *port* 8080)
 (dotimes (index (length *posix-argv*)) (when (equal (nth index *posix-argv*) "--port") (setf *port* (parse-integer (nth (+ 1 index) *posix-argv*)))))
-(defparameter *width*  175);this is in chars, not pixels. Much larger
-(defparameter *height* 175)
+(defparameter *width*  150);this is in chars, not pixels. Much larger
+(defparameter *height* 150)
 (defparameter *jungle* '(45 10 10 10))
 (defparameter *plant-energy* 80)
 (defparameter *plants* (make-hash-table :test #'equal))
@@ -207,7 +207,7 @@
 ;; enter a recursive infinite loop as the programs main loop.
 (defun make-name () (format t "new thread ~%") (let* ((chars "ABCDEFGHIJKLNOPQRSTUVWXYZ!@#$%^&") (rand (random (length chars)))) (subseq chars (- rand 1) rand)))
 (defparameter commands (make-hash-table :test #'equal))
-(defun serve ()
+(defun init ()
   (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
    (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (in ()))
@@ -220,9 +220,10 @@
                                         (cons 97 (lambda ()(setf x (- x 1))))
                                         (cons 100 (lambda ()(setf x (+ 1 x))))
                                         (cons 555 (lambda () (list name x y)))
-                                        )) *players*)))))
+                                        )) *players*))))))
+(defun serve ()
   "Main control loop"
-
+(setf *continue* t)
   (loop
     while *continue*
     do
@@ -240,4 +241,8 @@
 
 (defun sleepf (tim) (when (> tim 0) (sleep tim)))
 
-(bordeaux-threads:make-thread (lambda () (serve)))
+(init)
+(defun boot () (bordeaux-threads:make-thread (lambda () (serve))))
+(defun pause () (setf *continue* nil))
+(boot)
+
