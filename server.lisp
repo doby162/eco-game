@@ -20,7 +20,7 @@
 (defparameter *width*  150);this is in chars, not pixels. Much larger
 (defparameter *height* 150)
 (defparameter *jungle* '(45 10 10 10))
-(defparameter *plant-energy* 80)
+(defparameter *plant-energy* 40)
 (defparameter *plants* (make-hash-table :test #'equal))
 (defparameter *reproduction-energy* 200)
 (defparameter *input* ())
@@ -61,12 +61,12 @@
                      :y (ash *height* -1)
                      :energy 1000
                      :dir 0
-                     :genes (loop repeat 8 collect (1+ (random 10))))
+                     :genes (loop repeat 9 collect (1+ (random 10))))
         (make-animal :x 45
                      :y 15
                      :energy 1000
                      :dir 0
-                     :genes (loop repeat 8 collect (1+ (random 10))))))
+                     :genes (loop repeat 9 collect (1+ (random 10))))))
 
 (defun move- (animal)
   (let ((dir (animal-dir animal))
@@ -112,11 +112,12 @@
 
 (defun reproduce (animal)
   (let ((e (animal-energy animal)))
-    (when (>= e *reproduction-energy*)
+    (when (>= e (* 100 (car (last (animal-genes animal)))))
+(format t "~a~%" e)
       (setf (animal-energy animal) (ash e -1))
       (let ((animal-nu (copy-structure animal))
             (genes     (copy-list (animal-genes animal)))
-            (mutation  (random 8)))
+            (mutation  (random 9)))
         ;; mutate a random gene by +1 or -1.
         (setf (nth mutation genes)
               (max 1 (+ (nth mutation genes) (random 3) -1)))
@@ -258,5 +259,6 @@
 (defun boot () (bordeaux-threads:make-thread (lambda () (serve))))
 (defun pause () (setf *continue* nil))
 (defun clear-plants ()(setf *plants* (make-hash-table :test #'equal)))
+(defun status () (format t "~a plants~%~a animals~%" (hash-table-count *plants*) (length *animals*)))
 (boot)
 
