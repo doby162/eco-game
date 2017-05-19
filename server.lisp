@@ -42,10 +42,13 @@
 (defvar *log* "")
 (defun warning-log (new) (setf *log* (concatenate 'string *log* new)))
 
-(defun a-list-exec (ls ex &optional (key -1))
-  "takes an alist and a function identifier and executes the function at that location."
-;  (let (()))
-  (funcall (or (cdr (assoc ex ls)) (lambda () (warning-log "failed a-list-exec ")))))
+(defun a-list-exec (ls ex &optional key)
+  "takes an alist and a function identifier and executes the function at that location. Automatically handles the case where an alist is stores as the cdr of a cons,
+   and interprets the optional key to be an index of an alist in an alist. This should smooth over the use of alists as complex objects."
+  (let ((real-ls ls))
+    (when (last ls) (setf real-ls (cdr ls)));handles case where alist is stored as a named cons
+    (when key (setf real-ls (cdr (assoc key ls))));handle case where alist is stored in an alist
+  (funcall (or (cdr (assoc ex real-ls)) (lambda () (warning-log "failed a-list-exec "))))))
 
 (defun random-plant (left top width height)
   (let ((pos (cons (+ left (random width))
@@ -142,7 +145,7 @@
           (reproduce animal))
         *animals*)
    ;; Do what players do.
-   (dolist (player *players*) (when (remhash (funcall (cdr (assoc *location* (cdr player)))) *plants*) (funcall (cdr (assoc *eat* (cdr player))))))
+   (dolist (player *players*) (when (remhash (a-list-exec player *location*) *plants*) (a-list-exec player *eat*)))
   ;; Grow plants.
   (add-plants))
 
@@ -187,16 +190,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun player-x (player) (car 
-                          (funcall (or (cdr (assoc *status* (cdr player))) (lambda () (cons 31 31))))
-                          ))
-(defun player-y (player)
-  (cdr
-   (funcall (or (cdr (assoc *status* (cdr player))) (lambda () (cons 31 31))))
-   ))
-
-
-
 (defun gen-hash (hash)
   (let ((str "(progn "))
     (maphash #'(lambda (key value) (when value (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
@@ -205,7 +198,7 @@
 (defun gen-players ()
   (let ((str "(progn (setf *players* ()) "))
     (dolist (play *players*)
-      (setf str (concatenate 'string str (format nil "(push '~a *players*)" (funcall (or (cdr (assoc *status* (cdr play))) (lambda () (cons 31 31)))))))) (concatenate 'string str ")")))
+      (setf str (concatenate 'string str (format nil "(push '~a *players*)" (a-list-exec play *status*))))) (concatenate 'string str ")")))
 
 
 
@@ -250,7 +243,7 @@
             do (let ((command (pop *input*)))
                                         ;(format t "~a~%" command)
                  (setf (gethash (car command) commands) (cdr command))))
-      (maphash #'(lambda (key value) (a-list-exec (cdr (assoc key *players*)) value)) commands)
+      (maphash #'(lambda (key value) (a-list-exec *players* value key)) commands)
 
       (update-world)
       (sleepf (- *sleep-time* (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))) 
