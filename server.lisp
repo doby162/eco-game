@@ -1,11 +1,9 @@
 (ql:quickload :usocket)
-(ql:quickload :croatoan)
 (ql:quickload :bordeaux-threads)
 (defpackage #:common-game
   (:use :cl)
   (:use :sb-ext)
   (:use :usocket)
-  (:use :croatoan)
   (:export :serve)
   (:export :evolve))
 
@@ -22,7 +20,6 @@
 (defparameter *jungle* '(45 10 10 10))
 (defparameter *plant-energy* 40)
 (defparameter *plants* (make-hash-table :test #'equal))
-(defparameter *reproduction-energy* 200)
 (defparameter *input* ())
 (defparameter *players* ())
 (defparameter *continue* t)
@@ -119,7 +116,6 @@
 (defun reproduce (animal)
   (let ((e (animal-energy animal)))
     (when (>= e (* 100 (car (last (animal-genes animal)))))
-(format t "~a~%" e)
       (setf (animal-energy animal) (ash e -1))
       (let ((animal-nu (copy-structure animal))
             (genes     (copy-list (animal-genes animal)))
@@ -171,25 +167,6 @@
                   ;; end of the line.
                   (princ "|"))))
 
-;; enter a recursive infinite loop as the programs main loop.
-(defun evolution ()
-  (draw-world)
-  ;; add an empty line between worlds.
-  (fresh-line)
-  (let ((str (read-line)))
-    (cond ((equal str "quit") ())
-          (t (let ((x (parse-integer str :junk-allowed t)))
-               (if x
-                   (loop for i
-                         below x
-                         do (update-world)
-                         if (zerop (mod i 1000))
-                         do (princ #\.))
-                   (update-world))
-               (evolution))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defun gen-hash (hash)
   (let ((str "(progn "))
     (maphash #'(lambda (key value) (when value (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
@@ -234,6 +211,7 @@
 (defun serve ()
   "Main control loop"
 (setf *continue* t)
+(setf *sleep-time* 0.15)
   (loop
     while *continue*
     do
@@ -253,6 +231,7 @@
 
 (init)
 (defun boot () (bordeaux-threads:make-thread (lambda () (serve))))
+(defun fast () (setf *sleep-time* 0))
 (defun pause () (setf *continue* nil))
 (defun clear-plants ()(setf *plants* (make-hash-table :test #'equal)))
 (defun status () (format t "~a plants~%~a animals~%" (hash-table-count *plants*) (length *animals*)))
