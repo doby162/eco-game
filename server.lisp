@@ -32,17 +32,20 @@
 (defvar *S* 115)
 (defvar *A* 97)
 (defvar *D* 100)
+(defvar *animal-gene-count* 10)
 
 (defvar *status* 555)
 (defvar *location* 554)
 (defvar *eat* 553)
 
 (defstruct animal x y energy dir genes)
+(defvar *log* "")
+(defun warning-log (new) (setf *log* (concatenate 'string *log* new)))
 
-(defun list-exec (ex ls &optional (n -1))
-  "takes an alist and a :property-name and executes the funcion at that location. optionally operates on the :property of a list at nth of the given list"
-  (unless (= -1 n) (setf ls (nth n ls)))
-  (funcall (cdr (assoc ex ls :test #'string=))))
+(defun a-list-exec (ls ex &optional (key -1))
+  "takes an alist and a function identifier and executes the function at that location."
+;  (let (()))
+  (funcall (or (cdr (assoc ex ls)) (lambda () (warning-log "failed a-list-exec ")))))
 
 (defun random-plant (left top width height)
   (let ((pos (cons (+ left (random width))
@@ -61,12 +64,12 @@
                      :y (ash *height* -1)
                      :energy 1000
                      :dir 0
-                     :genes (loop repeat 9 collect (1+ (random 10))))
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))
         (make-animal :x 45
                      :y 15
                      :energy 1000
                      :dir 0
-                     :genes (loop repeat 9 collect (1+ (random 10))))))
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))))
 
 (defun move- (animal)
   (let ((dir (animal-dir animal))
@@ -117,7 +120,7 @@
       (setf (animal-energy animal) (ash e -1))
       (let ((animal-nu (copy-structure animal))
             (genes     (copy-list (animal-genes animal)))
-            (mutation  (random 9)))
+            (mutation  (random *animal-gene-count*)))
         ;; mutate a random gene by +1 or -1.
         (setf (nth mutation genes)
               (max 1 (+ (nth mutation genes) (random 3) -1)))
@@ -144,7 +147,7 @@
   (add-plants))
 
 ;;; simple non-ncurses version from LOL, prints to REPL.
-(defun draw-world ()
+(defun draw-world ();does not show players yet
   (loop for y
         below *height*
         do (progn (fresh-line)
@@ -247,7 +250,7 @@
             do (let ((command (pop *input*)))
                                         ;(format t "~a~%" command)
                  (setf (gethash (car command) commands) (cdr command))))
-      (maphash #'(lambda (key value) (funcall (or (cdr (assoc value (cdr (assoc key *players*)))) (lambda ())))) commands)
+      (maphash #'(lambda (key value) (a-list-exec (cdr (assoc key *players*)) value)) commands)
 
       (update-world)
       (sleepf (- *sleep-time* (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))) 
