@@ -75,6 +75,7 @@
 ; the screen has to be initialized first in the main function evolve.
 (defvar *recent-name* "")
 (defun draw-world-croatoan (scr)
+(add-string scr (format nil "Player Name: ~a~% Energy: ~a" *my-name* (fourth (assoc *my-name* *players*))) :x 1 :y 1)
   (loop 
     for y 
     from 0

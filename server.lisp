@@ -38,7 +38,7 @@
 ;; client state ;;
 
 ;; main loop state ;;
-(defparameter *continue* t)
+(defparameter *continue* nil)
 (defparameter *sleep-time* 0.15)
 (defparameter *commands* (make-hash-table :test #'equal))
 ;; main loop state ;;
@@ -162,12 +162,12 @@
                       (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
                       (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*))))
                       (push (cons name (list
-                                        (cons -1 (lambda ()))
-                                        (cons *W* (lambda ()(setf y (- y 1))))
-                                        (cons *S* (lambda ()(setf y (+ 1 y))))
-                                        (cons *A* (lambda ()(setf x (- x 1))))
-                                        (cons *D* (lambda ()(setf x (+ 1 x))))
-                                        (cons *status* (lambda () (list name x y)))
+                                        (cons -1 (lambda () (setf energy (- energy 1))))
+                                        (cons *W* (lambda ()(setf y (- y 1)) (setf energy (- energy 2))))
+                                        (cons *S* (lambda ()(setf y (+ 1 y)) (setf energy (- energy 2))))
+                                        (cons *A* (lambda ()(setf x (- x 1)) (setf energy (- energy 2))))
+                                        (cons *D* (lambda ()(setf x (+ 1 x)) (setf energy (- energy 2))))
+                                        (cons *status* (lambda () (list name x y energy)))
                                         (cons *location* (lambda () (cons x y)))
                                         (cons *eat* (lambda () (setf energy (+ energy *plant-energy*))))
                                         )) *players*))))))
@@ -216,9 +216,9 @@
 ;; network code ;;
 
 ;; admin functions ;;
-(defun boot () (bordeaux-threads:make-thread (lambda () (serve))))
+(defun boot () (unless *continue* (bordeaux-threads:make-thread (lambda () (serve)))))
 (defun fast () (setf *sleep-time* 0))
-(defun pause () (setf *continue* nil))
+(defun pause () (setf *continue* (not *continue*)))
 (defun clear-plants ()(setf *plants* (make-hash-table :test #'equal)))
 (defun status () (format t "~a plants~%~a animals~%" (hash-table-count *plants*) (length *animals*)))
 (defun draw-world ();does not show players yet
