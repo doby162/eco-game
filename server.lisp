@@ -18,7 +18,8 @@
 (defparameter *plant-energy* 40)
 (defparameter *plants* (make-hash-table :test #'equal))
 (defvar *animal-gene-count* 10)
-((defparameter *animals*
+(defstruct animal x y energy dir genes)
+(defparameter *animals*
   (list (make-animal :x (ash *width* -1)
                      :y (ash *height* -1)
                      :energy 1000
@@ -28,7 +29,7 @@
                      :y 15
                      :energy 1000
                      :dir 0
-                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))))defstruct animal x y energy dir genes)
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))))
 ;; wildlife state ;;
 
 ;; client state ;;
