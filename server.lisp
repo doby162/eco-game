@@ -6,39 +6,53 @@
   (:use :usocket)
   (:export :serve)
   (:export :evolve))
-
 (in-package :common-game)
 
-;; Example from "Land of Lisp", Copyright by Conrad Barski.
-;; Source: http://landoflisp.com/evolution.lisp
-;; Unknown licence.
-
-(defvar *port* 8080)
-(dotimes (index (length *posix-argv*)) (when (equal (nth index *posix-argv*) "--port") (setf *port* (parse-integer (nth (+ 1 index) *posix-argv*)))))
+;; biome bounds ;;
 (defparameter *width*  150);this is in chars, not pixels. Much larger
 (defparameter *height* 150)
 (defparameter *jungle* '(45 10 10 10))
+;; biome bounds ;;
+
+;; wildlife state ;;
 (defparameter *plant-energy* 40)
 (defparameter *plants* (make-hash-table :test #'equal))
-(defparameter *input* ())
+(defvar *animal-gene-count* 10)
+((defparameter *animals*
+  (list (make-animal :x (ash *width* -1)
+                     :y (ash *height* -1)
+                     :energy 1000
+                     :dir 0
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))
+        (make-animal :x 45
+                     :y 15
+                     :energy 1000
+                     :dir 0
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))))defstruct animal x y energy dir genes)
+;; wildlife state ;;
+
+;; client state ;;
 (defparameter *players* ())
+(defparameter *input* ())
+;; client state ;;
+
+;; main loop state ;;
 (defparameter *continue* t)
 (defparameter *sleep-time* 0.15)
+(defparameter *commands* (make-hash-table :test #'equal))
+;; main loop state ;;
 
+;; function identifiers ;;
 (defvar *W* 119)
 (defvar *S* 115)
 (defvar *A* 97)
 (defvar *D* 100)
-(defvar *animal-gene-count* 10)
-
 (defvar *status* 555)
 (defvar *location* 554)
 (defvar *eat* 553)
+;; function identifiers ;;
 
-(defstruct animal x y energy dir genes)
-(defvar *log* "")
-(defun warning-log (new) (setf *log* (concatenate 'string *log* new)))
-
+;; infrastructure ;;
 (defun a-list-exec (ls ex &optional key)
   "takes an alist and a function identifier and executes the function at that location. Automatically handles the case where an alist is stores as the cdr of a cons,
    and interprets the optional key to be an index of an alist in an alist. This should smooth over the use of alists as complex objects."
@@ -47,6 +61,13 @@
     (when key (setf real-ls (cdr (assoc key ls))));handle case where alist is stored in an alist
   (funcall (or (cdr (assoc ex real-ls)) (lambda () (warning-log "failed a-list-exec "))))))
 
+(defun sleepf (tim) (when (> tim 0) (sleep tim)))
+
+(defvar *log* "")
+(defun warning-log (new) (setf *log* (concatenate 'string *log* new)))
+;; infrastructure ;;
+
+;; wildlife functions ;;
 (defun random-plant (left top width height)
   (let ((pos (cons (+ left (random width))
                    (+ top  (random height)))))
@@ -57,19 +78,6 @@
   (apply #'random-plant *jungle*)
   ;; Then one in the rest of the world.
   (random-plant 0 0 *width* *height*))
-
-;; Define one starting animal.
-(defparameter *animals*
-  (list (make-animal :x (ash *width* -1)
-                     :y (ash *height* -1)
-                     :energy 1000
-                     :dir 0
-                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))
-        (make-animal :x 45
-                     :y 15
-                     :energy 1000
-                     :dir 0
-                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))))
 
 (defun move- (animal)
   (let ((dir (animal-dir animal))
@@ -127,7 +135,9 @@
         (setf (animal-genes animal-nu) genes)
         ;; push the new animal to the list.
         (push animal-nu *animals*)))))
+;; wildlife functions ;;
 
+;; main logic ;;
 (defun update-world ()
   ;; Remove dead animals.
   (setf *animals*
@@ -144,54 +154,6 @@
    (dolist (player *players*) (when (remhash (a-list-exec player *location*) *plants*) (a-list-exec player *eat*)))
   ;; Grow plants.
   (add-plants))
-
-;;; simple non-ncurses version from LOL, prints to REPL.
-(defun draw-world ();does not show players yet
-  (loop for y
-        below *height*
-        do (progn (fresh-line)
-                  ;; beginning of the line.
-                  (princ "|")
-                  (loop for x
-                        below *width*
-                        do (princ (cond 
-                                    ;; if there is one or more animals, print a M.
-                                    ((some (lambda (animal) (and (= (animal-x animal) x)
-                                                                 (= (animal-y animal) y)))
-                                           *animals*)
-                                     #\M)
-                                    ;; if there is a plant, print *
-                                    ((gethash (cons x y) *plants*) #\*)
-                                    ;; if there is neithe a plant nor an animal, print a space.
-                                    (t #\space))))
-                  ;; end of the line.
-                  (princ "|"))))
-
-(defun gen-hash (hash)
-  (let ((str "(progn "))
-    (maphash #'(lambda (key value) (when value (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
-(defun gen-animals ()
-  (format nil "(setf *animals* '~a)" *animals*))
-(defun gen-players ()
-  (let ((str "(progn (setf *players* ()) "))
-    (dolist (play *players*)
-      (setf str (concatenate 'string str (format nil "(push '~a *players*)" (a-list-exec play *status*))))) (concatenate 'string str ")")))
-
-
-
-
-
-(defun stream-read (stream)
-  "Reads from a usocket connected stream"
-  (read (usocket:socket-stream stream)))
-
-(defun stream-print (string stream)
-  "Prints to a usocket connected stream"
-  (print string (usocket:socket-stream stream))
-  (force-output (usocket:socket-stream stream)))
-;; enter a recursive infinite loop as the programs main loop.
-(defun make-name () (format t "new thread ~%") (let* ((chars "ABCDEFGHIJKLNOPQRSTUVWXYZ!@#$%^&") (rand (random (length chars)))) (subseq chars (- rand 1) rand)))
-(defparameter commands (make-hash-table :test #'equal))
 (defun init ()
   (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
   (bordeaux-threads:make-thread
@@ -220,20 +182,68 @@
       (loop while (> (length *input*) 0)
             do (let ((command (pop *input*)))
                                         ;(format t "~a~%" command)
-                 (setf (gethash (car command) commands) (cdr command))))
-      (maphash #'(lambda (key value) (a-list-exec *players* value key)) commands)
+                 (setf (gethash (car command) *commands*) (cdr command))))
+      (maphash #'(lambda (key value) (a-list-exec *players* value key)) *commands*)
 
       (update-world)
       (sleepf (- *sleep-time* (/ (- (get-internal-real-time) start-time) internal-time-units-per-second))) 
 )))
+;; main logic ;;
 
-(defun sleepf (tim) (when (> tim 0) (sleep tim)))
+;; network code ;;
+(defvar *port* 8080)
+(dotimes (index (length *posix-argv*)) (when (equal (nth index *posix-argv*) "--port") (setf *port* (parse-integer (nth (+ 1 index) *posix-argv*)))))
+(defun stream-read (stream)
+  "Reads from a usocket connected stream"
+  (read (usocket:socket-stream stream)))
+(defun stream-print (string stream)
+  "Prints to a usocket connected stream"
+  (print string (usocket:socket-stream stream))
+  (force-output (usocket:socket-stream stream)))
 
-(init)
+(defun gen-hash (hash)
+  (let ((str "(progn "))
+    (maphash #'(lambda (key value) (when value (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
+(defun gen-animals ()
+  (format nil "(setf *animals* '~a)" *animals*))
+(defun gen-players ()
+  (let ((str "(progn (setf *players* ()) "))
+    (dolist (play *players*)
+      (setf str (concatenate 'string str (format nil "(push '~a *players*)" (a-list-exec play *status*))))) (concatenate 'string str ")")))
+
+(defun make-name () (format t "new thread ~%") (let* ((chars "ABCDEFGHIJKLNOPQRSTUVWXYZ!@#$%^&") (rand (random (length chars)))) (subseq chars (- rand 1) rand)))
+;; network code ;;
+
+;; admin functions ;;
 (defun boot () (bordeaux-threads:make-thread (lambda () (serve))))
 (defun fast () (setf *sleep-time* 0))
 (defun pause () (setf *continue* nil))
 (defun clear-plants ()(setf *plants* (make-hash-table :test #'equal)))
 (defun status () (format t "~a plants~%~a animals~%" (hash-table-count *plants*) (length *animals*)))
+(defun draw-world ();does not show players yet
+  (loop for y
+        below *height*
+        do (progn (fresh-line)
+                  ;; beginning of the line.
+                  (princ "|")
+                  (loop for x
+                        below *width*
+                        do (princ (cond 
+                                    ;; if there is one or more animals, print a M.
+                                    ((some (lambda (animal) (and (= (animal-x animal) x)
+                                                                 (= (animal-y animal) y)))
+                                           *animals*)
+                                     #\M)
+                                    ;; if there is a plant, print *
+                                    ((gethash (cons x y) *plants*) #\*)
+                                    ;; if there is neithe a plant nor an animal, print a space.
+                                    (t #\space))))
+                  ;; end of the line.
+                  (princ "|"))))
+;; admin functions ;;
+
+;; run ;;
+(init)
 (boot)
+;; run ;;
 
