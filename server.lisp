@@ -35,6 +35,7 @@
 ;; client state ;;
 (defparameter *players* ())
 (defparameter *input* ())
+(defvar *names* "QWERTYUIOPASDFGHJKLZXCVBNM")
 ;; client state ;;
 
 ;; main loop state ;;
@@ -212,7 +213,7 @@
     (dolist (play *players*)
       (setf str (concatenate 'string str (format nil "(push '~a *players*)" (a-list-exec play *status*))))) (concatenate 'string str ")")))
 
-(defun make-name () (format t "new thread ~%") (let* ((chars "QWERTYUIOPASDFGHJKLZXCVBNM") (rand (random (length chars)))) (subseq chars (- rand 1) rand)))
+(defun make-name () (format t "new thread ~%") (let* ((rand (random (length *names*)))(name (subseq *names* (- rand 1) rand)))(setf *names* (concatenate 'string (subseq *names* 0 (- rand 1)) (subseq *names* rand))) name))
 ;; network code ;;
 
 ;; admin functions ;;

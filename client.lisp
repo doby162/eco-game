@@ -103,15 +103,15 @@
                                   ((some (lambda (animal) (and (= (animal-x animal) (+ x *x*))
                                                                (= (animal-y animal) (+ y *y*))))
                                          *animals*)
-                                   #\M)
+                                   #\m)
                                   ;; if there is a plant, print *
                                   ((gethash (cons (+ x *x*) (+ y *y*)) *plants*) #\*)
 
-                                  ;; if there is a player, pring their name
+                                  ;; if there is a player, print their name
                                   ((some (lambda (player) (and (= (second player) (+ x *x*))
                                                                (= (third player) (+ y *y*))
                                                                (setf *recent-name* (first player))
-                                                               (when (equalp *my-name* *recent-name*)(setf *recent-color* '(3 4)))))
+                                                               (progn (when (equalp *my-name* *recent-name*)(setf *recent-color* '(3 4))) 1)))
                                          *players*)
                                    *recent-name*)
                                   ;; if there is nothing, print a space.
