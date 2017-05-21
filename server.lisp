@@ -212,7 +212,7 @@
     (dolist (play *players*)
       (setf str (concatenate 'string str (format nil "(push '~a *players*)" (a-list-exec play *status*))))) (concatenate 'string str ")")))
 
-(defun make-name () (format t "new thread ~%") (let* ((chars "ABCDEFGHIJKLNOPQRSTUVWXYZ!@#$%^&") (rand (random (length chars)))) (subseq chars (- rand 1) rand)))
+(defun make-name () (format t "new thread ~%") (let* ((chars "QWERTYUIOPASDFGHJKLZXCVBNM") (rand (random (length chars)))) (subseq chars (- rand 1) rand)))
 ;; network code ;;
 
 ;; admin functions ;;
