@@ -1,9 +1,11 @@
 (ql:quickload :usocket)
 (ql:quickload :bordeaux-threads)
+(load "gps.lisp")
 (defpackage #:common-game
   (:use :cl)
   (:use :sb-ext)
   (:use :usocket)
+  (:use :gps)
   (:export :serve)
   (:export :evolve))
 (in-package :common-game)
@@ -18,18 +20,20 @@
 (defparameter *plant-energy* 40)
 (defparameter *plants* (make-hash-table :test #'equal))
 (defvar *animal-gene-count* 10)
-(defstruct animal x y energy dir genes)
+(defstruct animal x y energy dir genes plan state actions)
 (defparameter *animals*
   (list (make-animal :x (ash *width* -1)
                      :y (ash *height* -1)
                      :energy 1000
                      :dir 0
-                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10)))
+                     :plan ())
         (make-animal :x 45
                      :y 15
                      :energy 1000
                      :dir 0
-                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))))
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10)))
+                     :plan ())))
 ;; wildlife state ;;
 
 ;; client state ;;
@@ -137,6 +141,21 @@
         (setf (animal-genes animal-nu) genes)
         ;; push the new animal to the list.
         (push animal-nu *animals*)))))
+;;new animal functions
+; (gps '(various state vars) '(various goal vars) ops)
+(defun plan (animal)
+  (format t "planning: ")
+  (unless (animal-plan animal) (setf (animal-plan animal) (gps (animal-state animal) '(reproduce) (animal-actions animal))))
+  (format t "~a~%" (animal-plan animal)))
+(defun photosynth (animal)
+  (incf (animal-energy animal) 2));we need to take state into account
+(defun path (animal level)
+  )
+(defun execute (animal)
+  (let ((step (first (animal-plan animal))))
+    ;(funcall (first '(format)) t "hey")'))
+    (when (funcall step animal) (setf (animal-plan animal) (rest (animal-plan animal))))))
+
 ;; wildlife functions ;;
 
 ;; main logic ;;
@@ -147,9 +166,11 @@
                    *animals*))
   ;; Do what animals do.
   (mapc (lambda (animal)
-          (turn animal)
-          (move- animal)
-          (eat animal)
+          (plan animal)
+          (execute animal)
+;          (turn animal)
+;          (move- animal)
+;          (eat animal)
           (reproduce animal))
         *animals*)
    ;; Do what players do.
