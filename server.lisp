@@ -157,10 +157,10 @@
   ;; Grow plants.
   (add-plants))
 (defun init ()
-  (defparameter my-socket (usocket:socket-listen "127.0.0.1" *port*))
+  (defparameter my-socket (usocket:socket-listen *WILDCARD-HOST* *port*))
   (bordeaux-threads:make-thread
    (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (energy 2000)(in ()))
-                      (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants*) sock)(stream-print (gen-animals) sock))))
+                      (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants* (cons x y)) sock)(stream-print (gen-animals) sock))))
                       (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*))))
                       (push (cons name (list
                                         (cons -1 (lambda () (setf energy (- energy 1))))
@@ -203,9 +203,9 @@
   (print string (usocket:socket-stream stream))
   (force-output (usocket:socket-stream stream)))
 
-(defun gen-hash (hash)
+(defun gen-hash (hash target)
   (let ((str "(progn "))
-    (maphash #'(lambda (key value) (when value (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
+    (maphash #'(lambda (key value) (when (and value (> (car key) (- (car target) 30))(< (car key) (+ (car target) 30))(> (cdr key) (- (cdr target) 30))(< (cdr key) (+ (cdr target) 30))) (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
 (defun gen-animals ()
   (format nil "(setf *animals* '~a)" *animals*))
 (defun gen-players ()
