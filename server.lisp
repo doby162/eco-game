@@ -17,7 +17,10 @@
 ;; wildlife state ;;
 (defparameter *plant-energy* 40)
 (defparameter *plants* (make-hash-table :test #'equal))
-(defvar *animal-gene-count* 10)
+(defvar *animal-gene-count* 20)
+;the first 8 are for pathfinding
+;number 9 is for reproduction calorie count
+;nunbers 10 through x are for abilities
 (defstruct animal x y energy dir genes)
 (defparameter *animals*
   (list (make-animal :x (ash *width* -1)
@@ -26,6 +29,26 @@
                      :dir 0
                      :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))
         (make-animal :x 45
+                     :y 15
+                     :energy 1000
+                     :dir 0
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))
+        (make-animal :x 46
+                     :y 15
+                     :energy 1000
+                     :dir 0
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))
+        (make-animal :x 47
+                     :y 15
+                     :energy 1000
+                     :dir 0
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))
+        (make-animal :x 48
+                     :y 15
+                     :energy 1000
+                     :dir 0
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10))))
+        (make-animal :x 49
                      :y 15
                      :energy 1000
                      :dir 0
@@ -82,6 +105,7 @@
   (random-plant 0 0 *width* *height*))
 
 (defun move- (animal)
+(when (or (= 2 (nth 12 (animal-genes animal))) (= 2 (nth 11 (animal-genes animal))))
   (let ((dir (animal-dir animal))
         (x   (animal-x animal))
         (y   (animal-y animal)))
@@ -102,7 +126,7 @@
                   *height*)
                *height*))
 
-    (decf (animal-energy animal))))
+    (decf (animal-energy animal)))))
 
 (defun turn (animal)
   (let ((x (random (apply #'+ (animal-genes animal)))))
@@ -118,18 +142,23 @@
                  8)))))
 
 (defun eat (animal)
+
+(when (or (= 3 (nth 12 (animal-genes animal))) (= 3 (nth 11 (animal-genes animal))))
+
   (let ((pos (cons (animal-x animal) (animal-y animal))))
     (when (gethash pos *plants*)
       (incf (animal-energy animal) *plant-energy*)
-      (remhash pos *plants*))))
+      (remhash pos *plants*)))))
 
 (defun reproduce (animal)
   (let ((e (animal-energy animal)))
-    (when (>= e (* 100 (car (last (animal-genes animal)))))
+    (when (>= e (* 100 (nth 9 (animal-genes animal))))
       (setf (animal-energy animal) (ash e -1))
       (let ((animal-nu (copy-structure animal))
             (genes     (copy-list (animal-genes animal)))
             (mutation  (random *animal-gene-count*)))
+        (setf (animal-x animal-nu) (+ 1 (animal-x animal-nu)))
+        (setf (animal-y animal-nu) (+ 1 (animal-y animal-nu)))
         ;; mutate a random gene by +1 or -1.
         (setf (nth mutation genes)
               (max 1 (+ (nth mutation genes) (random 3) -1)))
@@ -137,6 +166,23 @@
         (setf (animal-genes animal-nu) genes)
         ;; push the new animal to the list.
         (push animal-nu *animals*)))))
+;1 = photo
+;2 = walk
+;3 = eat
+;4 = kill
+(defun photosynthisize (animal)
+(let ((no-one-here t))
+
+(dolist (other *animals*) (when (and (= (animal-x animal) (animal-x other)) (= (animal-y animal) (animal-y other)) (not (equalp (animal-genes animal) (animal-genes other))))
+      (setf no-one-here nil)))
+  (when (and no-one-here (or (= 1 (nth 12 (animal-genes animal))) (= 1 (nth 11 (animal-genes animal)))))
+(incf (animal-energy animal) 2)))
+
+(defun kill (animal)
+  (when (or (= 4 (nth 12 (animal-genes animal))) (= 4 (nth 11 (animal-genes animal))))
+    (dolist (other *animals*) (when (and (= (animal-x animal) (animal-x other)) (= (animal-y animal) (animal-y other)) (not (equalp (animal-genes animal) (animal-genes other))))
+      (setf (animal-energy animal) (+ (animal-energy animal) (animal-energy other)))(setf (animal-energy other) -50)))
+)))
 ;; wildlife functions ;;
 
 ;; main logic ;;
@@ -150,6 +196,8 @@
           (turn animal)
           (move- animal)
           (eat animal)
+          (photosynthisize animal)
+          (setf (animal-energy animal) (- (animal-energy animal) 1))
           (reproduce animal))
         *animals*)
    ;; Do what players do.
@@ -231,6 +279,14 @@
 ;; network code ;;
 
 ;; admin functions ;;
+(defun adimal ()
+  (push
+    (make-animal :x (+ 30 (random 40))
+                     :y (+ 30 (random 40))
+                     :energy 1000
+                     :dir 0
+                     :genes (loop repeat *animal-gene-count* collect (1+ (random 10)))) *animals*))
+
 (defun boot () (unless *continue* (bordeaux-threads:make-thread (lambda () (serve)))))
 (defun fast () (setf *sleep-time* 0))
 (defun pause () (setf *continue* (not *continue*)))
