@@ -160,7 +160,7 @@
   (defparameter my-socket (usocket:socket-listen *WILDCARD-HOST* *port*))
   (bordeaux-threads:make-thread
    (lambda () (loop (let ((sock (usocket:socket-accept my-socket)) (name (make-name)) (x 30) (y 30) (energy 2000)(in ()))
-                      (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants* (cons x y)) sock)(stream-print (gen-animals) sock))))
+                      (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (stream-print (gen-players) sock)(stream-print (gen-hash *plants* (cons x y)) sock)(stream-print (gen-animals (cons x y)) sock))))
                       (bordeaux-threads:make-thread (lambda () (loop (sleep 0.15) (push (cons name (stream-read sock)) *input*))))
                       (push (cons name (list
                                         (cons -1 (lambda () (setf energy (- energy 1))))
@@ -206,8 +206,22 @@
 (defun gen-hash (hash target)
   (let ((str "(progn "))
     (maphash #'(lambda (key value) (when (and value (> (car key) (- (car target) 30))(< (car key) (+ (car target) 30))(> (cdr key) (- (cdr target) 30))(< (cdr key) (+ (cdr target) 30))) (setf str (concatenate 'string str (format nil "(setf (gethash '~a *plants*) t)" key))))) *plants*) (concatenate 'string str ")")))
-(defun gen-animals ()
-  (format nil "(setf *animals* '~a)" *animals*))
+
+(defun filter  (f args x)
+    (cond ((null args) nil)
+        ((if (funcall f (car args) x)
+            (cons (car args) (filter  f (cdr args) x))
+            (filter  f (cdr args) x)))))
+
+(defun in-vision (animal coords)
+(let ((target (cons (animal-x animal) (animal-y animal))))
+  (when
+    (and (> (car coords) (- (car target) 30))(< (car coords) (+ (car target) 30))(> (cdr coords) (- (cdr target) 30))(< (cdr coords) (+ (cdr target) 30)))
+    (return-from in-vision t)) nil))
+
+(defun gen-animals (coords)
+  (let ((filtered (filter #'in-vision *animals* coords)))
+  (format nil "(setf *animals* '~a)" filtered)))
 (defun gen-players ()
   (let ((str "(progn (setf *players* ()) "))
     (dolist (play *players*)
