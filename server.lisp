@@ -292,6 +292,33 @@
 (defun pause () (setf *continue* (not *continue*)))
 (defun clear-plants ()(setf *plants* (make-hash-table :test #'equal)))
 (defun status () (format t "~a plants~%~a animals~%" (hash-table-count *plants*) (length *animals*)))
+
+(defun genes ()
+  (let ((one 0) (two 0) (three 0 ) (four 0) (five 0))
+    (dolist (animal *animals*)
+      (format t "~a . ~a~%" (nth 11 (animal-genes animal)) (nth 12 (animal-genes animal)))
+      (when (or (eq (nth 11 (animal-genes animal)) 1) (eq (nth 12 (animal-genes animal)) 1)) (setf one (+ one 1)))
+      (when (or (eq (nth 11 (animal-genes animal)) 2) (eq (nth 12 (animal-genes animal)) 2)) (setf two (+ two 1)))
+      (when (or (eq (nth 11 (animal-genes animal)) 3) (eq (nth 12 (animal-genes animal)) 3)) (setf three (+ three 1)))
+      (when (or (eq (nth 11 (animal-genes animal)) 4) (eq (nth 12 (animal-genes animal)) 4)) (setf four (+ four 1)))
+      (when (or (eq (nth 11 (animal-genes animal)) 4) (eq (nth 12 (animal-genes animal)) 4)) (setf four (+ four 1)))
+      (when (or (> (nth 11 (animal-genes animal)) 4) (< (nth 11 (animal-genes animal)) 1)
+        (> (nth 12 (animal-genes animal)) 4) (< (nth 12 (animal-genes animal)) 1) ) (setf five (+ four 1))))
+    (format t "Out of ~a animals:~%Photo:~a Walk:~a Eat:~a Kill:~a Dud:~a~%" (length *animals*) one two three four five)))
+
+(defun count-gene (gene)
+  (let ((matches ()) (one 0) (two 0) (three 0) (four 0) (five 0))
+    (dolist (animal *animals*)
+      (when (or (eq (nth 11 (animal-genes animal)) gene) (eq (nth 12 (animal-genes animal)) gene)) (push animal matches)))
+    (dolist (match matches)
+      (when (or (eq (nth 11 (animal-genes match)) 1) (eq (nth 12 (animal-genes match)) 1)) (setf one (+ one 1)))
+      (when (or (eq (nth 11 (animal-genes match)) 2) (eq (nth 12 (animal-genes match)) 2)) (setf two (+ two 1)))
+      (when (or (eq (nth 11 (animal-genes match)) 3) (eq (nth 12 (animal-genes match)) 3)) (setf three (+ three 1)))
+      (when (or (eq (nth 11 (animal-genes match)) 4) (eq (nth 12 (animal-genes match)) 4)) (setf four (+ four 1)))
+      (when (or (> (nth 11 (animal-genes match)) 4) (< (nth 11 (animal-genes match)) 1)
+        (> (nth 12 (animal-genes match)) 4) (< (nth 12 (animal-genes match)) 1) ) (setf five (+ four 1))))
+    (format t "Out of ~a animals:~%Photo:~a Walk:~a Eat:~a Kill:~a Dud:~a~%" (length matches) one two three four five)))
+
 (defun draw-world ();does not show players yet
   (loop for y
         below *height*
