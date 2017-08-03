@@ -129,7 +129,7 @@
     (decf (animal-energy animal)))))
 
 (defun turn (animal)
-  (let ((x (random (apply #'+ (animal-genes animal)))))
+  (let ((x (random (apply #'+ (subseq (animal-genes animal) 0 7)))))
     (labels ((angle (genes x)
                (let ((xnu (- x (car genes))))
                  (if (< xnu 0)
@@ -190,6 +190,12 @@
   ;; Remove dead animals.
   (setf *animals*
         (remove-if (lambda (animal) (<= (animal-energy animal) 0))
+                   *animals*))
+(setf *animals*
+        (remove-if (lambda (animal) (>= (animal-x animal) *width*))
+                   *animals*))
+(setf *animals*
+        (remove-if (lambda (animal) (>= (animal-y animal) *height*))
                    *animals*))
   ;; Do what animals do.
   (mapc (lambda (animal)
@@ -343,6 +349,7 @@
 
 ;; run ;;
 (init)
+(dotimes (x 500) (adimal))
 (boot)
 ;; run ;;
 
